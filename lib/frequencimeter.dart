@@ -10,4 +10,5 @@ abstract class Frequencimeter implements Disposable {
   bool get isMeasuring;
   Stream<BluetoothDeviceConnection> get connectionStatus;
   Stream<BluetoothDisponibility> get bluetoothDisponibility;
+  void turnOnBluetooth();
 }

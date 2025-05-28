@@ -16,7 +16,7 @@ class AppWidget extends StatelessWidget {
           seedColor: Color.fromARGB(0, 0, 0, 255),
         ),
       ),
-      home: MyApp(),
+      home: FrequencimetroPage(),
     );
   }
 }
