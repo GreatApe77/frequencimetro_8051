@@ -22,6 +22,8 @@ class FrequencimeterImpl implements Frequencimeter {
 
   StreamSubscription? _hc05StreamSub;
 
+  final List<int> _frequencyBytes = [];
+
   FrequencimeterImpl(FlutterBlueClassic flutterBlueClassicPlugin) {
     _flutterBlueClassic = flutterBlueClassicPlugin;
     _flutterBlueClassic.adapterStateNow.then(
@@ -86,7 +88,8 @@ class FrequencimeterImpl implements Frequencimeter {
   void startMeasure() {
     final dataToSend = ascii.encode('#');
     print(dataToSend);
-    _bluetoothConnection?.output.add(ascii.encode('#'));
+    _bluetoothConnection?.output.add(dataToSend);
+    _isMeasuringStatusStreamController.add(true);
   }
 
   void stopScan() {
@@ -109,7 +112,24 @@ class FrequencimeterImpl implements Frequencimeter {
   void _subscribeToDeviceEvents() {
     _hc05StreamSub =
         _bluetoothConnection!.input!.listen((event) {
-            print('RECEBEU DADOS');
+            print('Chegou Byte:');
+            print(event);
+            if (_frequencyBytes.length == 1) {
+              _frequencyBytes.add(event.first);
+              int mostSignificantByte = _frequencyBytes.first;
+              int lessSificantByte = _frequencyBytes.last;
+              int frequencyValue = _joinBytes(
+                mostSignificantByte,
+                lessSificantByte,
+              );
+
+              print('Valor da frequencia: $frequencyValue');
+              _isMeasuringStatusStreamController.add(false);
+              _frequencyStreamController.add(frequencyValue);
+              _frequencyBytes.clear();
+            } else {
+              _frequencyBytes.add(event.first);
+            }
           })
           ..onError((_) {
             _connectionController.add(BluetoothDeviceConnection.disconnected);
@@ -117,5 +137,9 @@ class FrequencimeterImpl implements Frequencimeter {
           ..onDone(() {
             _connectionController.add(BluetoothDeviceConnection.disconnected);
           });
+  }
+
+  int _joinBytes(int a, int b) {
+    return (a << 8) | b;
   }
 }

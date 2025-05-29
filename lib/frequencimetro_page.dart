@@ -15,6 +15,8 @@ class _FrequencimetroPageState extends State<FrequencimetroPage> {
   bool _isThereBluetooth = false;
   bool _isConnected = false;
   bool _isScanning = false;
+  bool _isMeasuring = false;
+  int _frequencyValue = 0;
   final List<BluetoothDevice> _devices = [];
 
   @override
@@ -50,6 +52,18 @@ class _FrequencimetroPageState extends State<FrequencimetroPage> {
       }
       setState(() {
         _isConnected = false;
+      });
+    });
+    _frequencimeterBluetooth.isMeasuringStatusStream.listen((event) {
+      if (!mounted) return;
+      setState(() {
+        _isMeasuring = event;
+      });
+    });
+    _frequencimeterBluetooth.currentFrequency.listen((event) {
+      if (!mounted) return;
+      setState(() {
+        _frequencyValue = event;
       });
     });
     super.initState();
@@ -124,14 +138,16 @@ class _FrequencimetroPageState extends State<FrequencimetroPage> {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Text('700000 Hz', style: Theme.of(context).textTheme.headlineLarge),
+            Text('$_frequencyValue Hz', style: Theme.of(context).textTheme.headlineLarge),
             SizedBox(height: 20),
-            FilledButton(
-              onPressed: () {
-                _frequencimeterBluetooth.startMeasure();
-              },
-              child: Text('Realizar medição'),
-            ),
+            _isMeasuring
+                ? CircularProgressIndicator()
+                : FilledButton(
+                  onPressed: () {
+                    _frequencimeterBluetooth.startMeasure();
+                  },
+                  child: Text('Realizar medição'),
+                ),
             //
           ],
         ),
