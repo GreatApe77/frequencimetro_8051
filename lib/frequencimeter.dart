@@ -7,7 +7,6 @@ enum BluetoothDeviceConnection { connected, disconnected }
 abstract class Frequencimeter implements Disposable {
   Stream<int> get currentFrequency;
   void startMeasure();
-  bool get isMeasuring;
   Stream<BluetoothDeviceConnection> get connectionStatus;
   Stream<BluetoothDisponibility> get bluetoothDisponibility;
   void turnOnBluetooth();

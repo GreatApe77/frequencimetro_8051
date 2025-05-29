@@ -15,7 +15,7 @@ class _FrequencimetroPageState extends State<FrequencimetroPage> {
   bool _isThereBluetooth = false;
   bool _isConnected = false;
   bool _isScanning = false;
-  List<BluetoothDevice> _devices = [];
+  final List<BluetoothDevice> _devices = [];
 
   @override
   void initState() {
@@ -28,6 +28,8 @@ class _FrequencimetroPageState extends State<FrequencimetroPage> {
         return;
       }
       setState(() {
+        _isConnected = false;
+        _isScanning = false;
         _isThereBluetooth = false;
       });
     });
@@ -36,6 +38,18 @@ class _FrequencimetroPageState extends State<FrequencimetroPage> {
       if (!mounted) return;
       setState(() {
         _devices.add(event);
+      });
+    });
+    _frequencimeterBluetooth.connectionStatus.listen((event) {
+      if (!mounted) return;
+      if (event == BluetoothDeviceConnection.connected) {
+        setState(() {
+          _isConnected = true;
+        });
+        return;
+      }
+      setState(() {
+        _isConnected = false;
       });
     });
     super.initState();
@@ -64,7 +78,6 @@ class _FrequencimetroPageState extends State<FrequencimetroPage> {
     if (!_isConnected) {
       return Scaffold(
         appBar: AppBar(
-          
           title: Text('Dispositivos'),
           actions: [
             _isScanning
@@ -96,7 +109,10 @@ class _FrequencimetroPageState extends State<FrequencimetroPage> {
               title: Text(
                 '${_devices[index].name ?? 'Dispositivo sem nome'} (${_devices[index].address})',
               ),
-              onTap: () {},
+              onTap: () {
+                _frequencimeterBluetooth.setDevice(_devices[index]);
+                _frequencimeterBluetooth.connect();
+              },
             );
           },
         ),
@@ -110,7 +126,12 @@ class _FrequencimetroPageState extends State<FrequencimetroPage> {
           children: [
             Text('700000 Hz', style: Theme.of(context).textTheme.headlineLarge),
             SizedBox(height: 20),
-            FilledButton(onPressed: () {}, child: Text('Realizar medição')),
+            FilledButton(
+              onPressed: () {
+                _frequencimeterBluetooth.startMeasure();
+              },
+              child: Text('Realizar medição'),
+            ),
             //
           ],
         ),

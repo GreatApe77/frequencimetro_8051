@@ -1,26 +1,22 @@
 import 'dart:async';
+import 'dart:convert';
 
+import 'package:flutter/material.dart';
 import 'package:flutter_blue_classic/flutter_blue_classic.dart';
 import 'package:frequencimetro_8051/frequencimeter.dart';
-import 'package:frequencimetro_8051/initializable.dart';
 
-class FrequencimeterImpl implements Frequencimeter, Initializable {
+class FrequencimeterImpl implements Frequencimeter {
   final _frequencyStreamController = StreamController<int>.broadcast();
 
+  final _isMeasuringStatusStreamController = StreamController<bool>.broadcast();
   final _disponibilityController =
       StreamController<BluetoothDisponibility>.broadcast();
-
   final _connectionController =
       StreamController<BluetoothDeviceConnection>.broadcast();
-
-  bool _isMeasuring = false;
 
   BluetoothDevice? _hc05device;
 
   BluetoothConnection? _bluetoothConnection;
-
-  Stream<BluetoothDevice> get avaiableDevices =>
-      _flutterBlueClassic.scanResults.asBroadcastStream();
 
   late FlutterBlueClassic _flutterBlueClassic;
 
@@ -28,14 +24,14 @@ class FrequencimeterImpl implements Frequencimeter, Initializable {
 
   FrequencimeterImpl(FlutterBlueClassic flutterBlueClassicPlugin) {
     _flutterBlueClassic = flutterBlueClassicPlugin;
-    _flutterBlueClassic.adapterState.listen((event) {
-      if (event == BluetoothAdapterState.on) {
-        _disponibilityController.add(BluetoothDisponibility.avaiable);
-        return;
-      }
-      _disponibilityController.add(BluetoothDisponibility.notAvaiable);
-    });
+    _flutterBlueClassic.adapterStateNow.then(
+      (state) => _handleDisponibilityState(state),
+    );
+    _flutterBlueClassic.adapterState.listen(_handleDisponibilityState);
   }
+
+  Stream<BluetoothDevice> get avaiableDevices =>
+      _flutterBlueClassic.scanResults.asBroadcastStream();
 
   @override
   Stream<BluetoothDisponibility> get bluetoothDisponibility =>
@@ -48,43 +44,9 @@ class FrequencimeterImpl implements Frequencimeter, Initializable {
   @override
   Stream<int> get currentFrequency => _frequencyStreamController.stream;
 
-  @override
-  bool get isMeasuring => _isMeasuring;
+  Stream<bool> get isMeasuringStatusStream =>
+      _isMeasuringStatusStreamController.stream;
 
-  @override
-  Future<void> dispose() async {
-    _hc05StreamSub?.cancel();
-    _bluetoothConnection?.finish();
-    await _frequencyStreamController.close();
-    await _connectionController.close();
-  }
-
-  @override
-  Future<void> initialize() async {}
-
-  @override
-  void startMeasure() {
-    // TODO: implement startMeasure
-  }
-
-  @override
-  void turnOnBluetooth() {
-    _flutterBlueClassic.turnOn();
-  }
-
-  void setDevice(BluetoothDevice bluetoothDevice) {
-    _hc05device = bluetoothDevice;
-  }
-
-  void scan() {
-    _flutterBlueClassic.startScan();
-  }
-
-  void stopScan() {
-    _flutterBlueClassic.stopScan();
-  }
-
-  @override
   Future<void> connect() async {
     if (_hc05device == null) throw Exception('Dispositivo não foi escolhido');
     try {
@@ -102,9 +64,58 @@ class FrequencimeterImpl implements Frequencimeter, Initializable {
     }
   }
 
+  @override
+  Future<void> dispose() async {
+    _hc05StreamSub?.cancel();
+    _disponibilityController.close();
+    _frequencyStreamController.close();
+    _connectionController.close();
+    _isMeasuringStatusStreamController.close();
+    _bluetoothConnection?.finish();
+  }
+
+  void scan() {
+    _flutterBlueClassic.startScan();
+  }
+
+  void setDevice(BluetoothDevice bluetoothDevice) {
+    _hc05device = bluetoothDevice;
+  }
+
+  @override
+  void startMeasure() {
+    final dataToSend = ascii.encode('#');
+    print(dataToSend);
+    _bluetoothConnection?.output.add(ascii.encode('#'));
+  }
+
+  void stopScan() {
+    _flutterBlueClassic.stopScan();
+  }
+
+  @override
+  void turnOnBluetooth() {
+    _flutterBlueClassic.turnOn();
+  }
+
+  void _handleDisponibilityState(BluetoothAdapterState state) {
+    if (state == BluetoothAdapterState.on) {
+      _disponibilityController.add(BluetoothDisponibility.avaiable);
+      return;
+    }
+    _disponibilityController.add(BluetoothDisponibility.notAvaiable);
+  }
+
   void _subscribeToDeviceEvents() {
-    _hc05StreamSub = _bluetoothConnection!.input!.listen((event) {
-      print('RECEBEU DADOS');
-    });
+    _hc05StreamSub =
+        _bluetoothConnection!.input!.listen((event) {
+            print('RECEBEU DADOS');
+          })
+          ..onError((_) {
+            _connectionController.add(BluetoothDeviceConnection.disconnected);
+          })
+          ..onDone(() {
+            _connectionController.add(BluetoothDeviceConnection.disconnected);
+          });
   }
 }
