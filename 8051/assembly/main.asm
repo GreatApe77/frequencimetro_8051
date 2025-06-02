@@ -1,19 +1,24 @@
+;====================================================================
+;Microcontralador:                      AT89C52-24PC
+;Frequência do cristal oscilador:       22,1184 MHz
+;Projeto:                               Frequêncimetro digital ~65 KHz
+;====================================================================
 TIMER0_COUNTER		equ		65535-46080+8
 TIMES_INTERRUPT         equ		40d             ;20d
 ;====================================================================
-; VARIABLES
+; VARIAVEIS
 ;====================================================================
 milisegundos            equ             0Ah
 fHighByte               equ             0Bh
 fLowByte                equ             0Ch
 binToBcdHigh            equ             0Dh
 binToBcdLow             equ             0Eh
-flag_passou_1seg        bit             20h.0
-pulso                   bit             P1.0h
+flagPassou1Seg          bit             20h.0
+
 ;====================================================================
-; CODE SEGMENT
+; PROGRAMA
 ;====================================================================
-        	     	org             0000h
+                             org             0000h
         sjmp            setup
                         org             000Bh
         ljmp            tratar_interrupcao
@@ -38,17 +43,14 @@ loop_displays:
         mov             A,SBUF
         clr             TR1
         call            config_timers
-        ;call           reset_contexto_serial
-        
-        ;jb             pulso,loop_displays
-        ;jnb            pulso,$
+
         mov             TL1,#00h
         mov             TH1,#00h
         setb            TR1
         setb            TR0
-        jnb             flag_passou_1seg,$
+        jnb             flagPassou1Seg,$
         clr             TR1
-        clr             flag_passou_1seg
+        clr             flagPassou1Seg
         mov             fLowByte,TL1
         mov             fHighByte,TH1
         ;;;TRANSMITIR SERIAL
@@ -85,19 +87,9 @@ config_timers:
         mov             TH1,#00h        ;Zera Timer1 High (o Valor da frequência será medido desse timer como contador)
         ;mov            milisegundos,#100d              ;Carrega a variavel milisegundos com o valor 20.Representa o número de estouros para contar 1 segundo
         mov             milisegundos,#TIMES_INTERRUPT
-        clr             flag_passou_1seg                ;Limpa a flag que indica o passar de 1 segundo
+        clr             flagPassou1Seg                ;Limpa a flag que indica o passar de 1 segundo
         ret
-;
-;Configura Serial para recepcao da frequência
-;
-config_serial_recepcao:
-        ;push           TMOD
-        ;push           SCON
-        mov             TMOD,#21h       ;Configura Timer 1 no modo 2 (8 bits com recarga automática)
-        mov             SCON,#50h       ;Configura serial no modo 1 (Habilitando recepcao)
-        mov             TH1,#0FAh       ;Carga de TH1 para um clock de 22.1184Mhz
-        mov             TL1,TH1
-        ret
+
 ;
 ;Configura Serial para transmissão da frequência
 ;
@@ -108,7 +100,6 @@ config_serial_transmissao:
         ;orl            IE,#90h         ;habilita interrupcao Serial
         mov             TMOD,#21h       ;Configura Timer 1 no modo 2 (8 bits com recarga automática)
         mov             SCON,#40h       ;Configura serial no modo 1 
-        ;mov            TH1,#0F3h
         mov             TH1,#0FAh       ;Carga de TH1 para um clock de 22.1184Mhz
         mov             TL1,TH1
         ret
@@ -186,18 +177,13 @@ atualizar_display_dezena_milhar:
         setb            P2.1
         ret
 
-setup_transmissao:
 
 tratar_interrupcao:
         mov             TL0, #low TIMER0_COUNTER
         mov             TH0, #high TIMER0_COUNTER
         djnz            milisegundos,saida
-        ;mov            fHighByte,TH1
-        ;mov            fLowByte,TL1
-        ;clr            TR1
-        ;clr            TR0
-        mov             milisegundos,#TIMES_INTERRUPT   ;Carrega com o valor 100
-        setb            flag_passou_1seg
+        mov             milisegundos,#TIMES_INTERRUPT
+        setb            flagPassou1Seg
         clr             TR0
         
 saida:
@@ -276,8 +262,6 @@ next:
         mov             R5,A
 exit:
         ret
-;;;
-
         
 ;====================================================================
         END
