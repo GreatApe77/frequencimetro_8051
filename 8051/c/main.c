@@ -9,12 +9,12 @@
 
 #define TIMES_INTERRUPT 40
 #define TIMER0_COUNTER 65535 - 46080 + 8
-#define SERIAL_MODE_1_RECHARGE_VALUE 0xFA;
+#define SERIAL_MODE_1_RECHARGE_VALUE 0xFA
 unsigned char milisegundos;
 unsigned char fByteAlto;
 unsigned char fByteBaixo;
 
-__sbit __at(0x20) flagPassou1Seg;
+__bit flagPassou1Seg = 0;
 
 void setup();
 void configTimers();
@@ -90,7 +90,7 @@ void configTimers()
 {
     IE = 0b10000010;
     TL0 = TIMER0_COUNTER & 0x00FF;
-    TH0 = TIMER0_COUNTER & 0xFF00;
+    TH0 = (TIMER0_COUNTER >> 8) & 0x00FF;
     TMOD = 0b01010001;
     TL1 = 0;
     TH1 = 0;
