@@ -49,5 +49,13 @@ app.*.map.json
 
 # 8051 assembler compilation binaries
 
-8051/assembly/*.hex
-8051/assembly/*.lst
+8051/*.hex
+8051/*.lst
+8051/c/build
+8051/c/*.ihx
+8051/c/*.hex
+8051/c/*.asm
+8051/c/*.lst
+8051/c/*.sym
+8051/c/*.map
+8051/c/*.mem
