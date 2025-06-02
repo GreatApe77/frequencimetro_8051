@@ -5,7 +5,7 @@
  * Compiler:  SDCC for 8051
  */
 
-#include <8051.h>
+#include <8052.h>
 
 #define TIMES_INTERRUPT 40
 #define TIMER0_COUNTER 65535 - 46080 + 8
@@ -27,6 +27,10 @@ void main(void)
 
 {
     setup();
+    while (1)
+    {
+        loop();
+    }
 }
 void loop()
 {
@@ -67,12 +71,13 @@ void loop()
     }
     TI = 0;
     TR1 = 0;
-    loop();
+    // loop();
 }
 void setup()
 {
     SP = 128 - 25; // Move stack pointer to end of RAM.
     configTimers();
+    return;
 }
 void configSerialTransmissao()
 {
@@ -90,9 +95,21 @@ void configTimers()
     TL1 = 0;
     TH1 = 0;
     milisegundos = TIMES_INTERRUPT;
+    return;
 }
 void updateDisplays()
 {
+    ///  0xFFFF
+    ///    3210
+    unsigned char nibble0;
+    unsigned char nibble1;
+    unsigned char nibble2;
+    unsigned char nibble3;
+    nibble0 = fByteBaixo & 0x0F;
+    nibble1 = fByteBaixo & 0xF0;
+    nibble2 = fByteAlto & 0x0F;
+    nibble3 = fByteAlto & 0xF0;
+    atualizarDisplay(nibble0, 6);
 }
 void handleTimer0Interrupt(void) __interrupt(1)
 {
@@ -117,6 +134,8 @@ void atualizarDisplay(unsigned char hexValue, unsigned char posicao)
     P0 = convert(hexValue);
 
     P2 = ~(1 << posicao); // Ativa somente o bit escolhido (nível baixo)}
+    delay();
+    P2 = (1 << posicao);
 }
 unsigned char convert(unsigned char hexNum)
 {
