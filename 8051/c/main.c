@@ -9,23 +9,74 @@
 
 #define TIMES_INTERRUPT 40
 #define TIMER0_COUNTER 65535 - 46080 + 8
-
+#define SERIAL_MODE_1_RECHARGE_VALUE 0xFA;
 unsigned char milisegundos;
+unsigned char fByteAlto;
+unsigned char fByteBaixo;
 
-//__bit__at (0x20) flagPassou1Seg;
+__sbit __at(0x20) flagPassou1Seg;
 
 void setup();
 void configTimers();
-
+void loop();
+void updateDisplays();
+void configSerialTransmissao();
 void main(void)
 {
     setup();
 }
-
+void loop()
+{
+    TMOD = 0x21;
+    SCON = 0x50;
+    TH1 = SERIAL_MODE_1_RECHARGE_VALUE;
+    TL1 = TH1;
+    TR1 = 1;
+    while (RI == 0)
+    {
+        updateDisplays();
+    }
+    RI = 0;
+    TR1 = 0;
+    configTimers();
+    TL1 = 0;
+    TH1 = 0;
+    TR1 = 1;
+    TR0 = 1;
+    while (flagPassou1Seg == 0)
+    {
+    }
+    TR1 = 0;
+    flagPassou1Seg = 0;
+    fByteAlto = TH1;
+    fByteBaixo = TL1;
+    // SERIAL
+    configSerialTransmissao();
+    TR1 = 1;
+    ACC = fByteAlto;
+    while (TI == 0)
+    {
+    }
+    TI = 0;
+    ACC = fByteBaixo;
+    while (TI == 0)
+    {
+    }
+    TI = 0;
+    TR1 = 0;
+    loop();
+}
 void setup()
 {
     SP = 128 - 25; // Move stack pointer to end of RAM.
     configTimers();
+}
+void configSerialTransmissao()
+{
+    TMOD = 0x21;
+    SCON = 0x40;
+    TH1 = SERIAL_MODE_1_RECHARGE_VALUE;
+    TL1 = TH1;
 }
 void configTimers()
 {
@@ -36,4 +87,50 @@ void configTimers()
     TL1 = 0;
     TH1 = 0;
     milisegundos = TIMES_INTERRUPT;
+}
+void updateDisplays()
+{
+}
+void handleTimer0Interrupt(void) __interrupt(1)
+{
+    TL0 = TIMER0_COUNTER & 0x00FF;
+    TH0 = TIMER0_COUNTER & 0xFF00;
+    if (--milisegundos != 0)
+        return;
+    milisegundos = TIMES_INTERRUPT;
+    flagPassou1Seg = 1;
+    TR0 = 0;
+}
+
+void delay()
+{
+    unsigned char i = 0;
+    for (i = 0; i < 0xFF; i++)
+    {
+    }
+}
+
+unsigned char convert(unsigned char hexNum)
+{
+
+    __code const unsigned char table[] = {
+        0b00111111,  	// 0
+        0b00000110, 	// 1
+        0b01011011, 	// 2
+        0b01001111, 	// 3
+        0b01100110, 	// 4
+        0b01101101, 	// 5
+        0b01111101, 	// 6
+        0b00000111, 	// 7
+        0b01111111, 	// 8
+        0b01100111, 	// 9
+        0b01110111,	// A
+        0b01111100, 	// B
+        0b00111001,	// C
+        0b01011110, 	// D
+        0b01111001, 	// E
+        0b01110001  	// F
+    };
+    unsigned char segmento = table[hexNum];
+    return ~segmento;
 }
