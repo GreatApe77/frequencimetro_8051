@@ -63,15 +63,15 @@ loop_displays:
         clr             flagPassou1Seg
         mov             fLowByte,TL1
         mov             fHighByte,TH1
-	mov            	binToBcdHigh,fHighByte
-	mov             binToBcdLow,fLowByte
-	call		bin24_to_bcd
-	mov		displayUni,R1
-	mov		displayDez,R2
-	mov		displayCent,R3
-	mov		displayUniMilhar,R4
-	mov		displayDezMilhar,R5
-	; INICIO DA TRANSMISSAO SERIAL
+        mov            	binToBcdHigh,fHighByte
+        mov             binToBcdLow,fLowByte
+        call		bin24_to_bcd
+        mov		displayUni,R1
+        mov		displayDez,R2
+        mov		displayCent,R3
+        mov		displayUniMilhar,R4
+        mov		displayDezMilhar,R5
+        ; INICIO DA TRANSMISSAO SERIAL
         call            config_serial_transmissao
         setb            TR1
         mov             A,fHighByte
@@ -82,7 +82,7 @@ loop_displays:
         mov             SBUF,A
         jnb             TI,$
         clr             TI
-	; FIM DA TRANSMISSAO SERIAL
+        ; FIM DA TRANSMISSAO SERIAL
         ajmp            restart
 
 
@@ -119,7 +119,7 @@ config_serial_transmissao:
 
 
 atualizar_displays:
-	
+        
         call            atualizar_display_frequencia
         call            atualizar_display_unidade
         call            atualizar_display_dezena
@@ -302,4 +302,4 @@ exit:
 ;====================================================================
 ; FIM DO PROGRAMA
 ;====================================================================
-	end
+        end
